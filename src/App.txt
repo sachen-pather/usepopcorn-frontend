@@ -1,0 +1,187 @@
+import { useEffect, useState } from "react";
+import { debounce } from "lodash";
+import { WatchedMovieList } from "./components/WatchedMovieList";
+import { Search } from "./components/Search";
+import { Logo } from "./components/Logo";
+import { NumResults } from "./components/NumResults";
+import { NavBar } from "./components/NavBar";
+import { WatchedSummary } from "./components/WatchedSummary";
+import { MovieDetails } from "./components/MovieDetails";
+import { MovieList } from "./components/MovieList";
+import { Loader } from "./components/Loader";
+import { BoxImage, Box } from "./components/BoxImage";
+import { Main } from "./components/Main";
+import { ErrorMessage } from "./components/ErrorMessage";
+
+export const average = (arr) =>
+  arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
+
+export const KEY = "5d3cfe2";
+
+export default function App() {
+  const [movies, setMovies] = useState([]);
+  const [watched, setWatched] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState(""); //technique to catch errors is to use a useState
+  const [selectedId, setSelectedId] = useState(null);
+  // the below is also an example of component composition to combat
+  // prop drilling.
+  //note you could also use an explicit prop
+  // i.e. <Box element = {<MovieList movies = {movies} />}
+  // and pass element in as parameter without component composition
+  //using children is still the best practice
+
+  const [selectedPoster, setSelectedPoster] = useState(null);
+
+  // Modify handleSelectMovie to clear the poster when deselecting
+  function handleSelectMovie(id) {
+    setSelectedId((selectedId) => {
+      if (id === selectedId) {
+        setSelectedPoster(null); // Clear poster when deselecting
+        return null;
+      }
+      // Find the selected movie and set its poster
+      const selectedMovie = movies.find((movie) => movie.imdbID === id);
+      if (selectedMovie) {
+        setSelectedPoster(selectedMovie.Poster);
+      }
+      return id;
+    });
+  }
+
+  function handleCloseMovie() {
+    setSelectedId(null);
+    setSelectedPoster(null); // Clear poster when closing movie details
+  }
+
+  function handleAddWatched(movie) {
+    setWatched((watched) => [...watched, movie]);
+  }
+
+  function handleDeleteWatched(id) {
+    setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
+  }
+
+  useEffect(() => {
+    const controller = new AbortController(); // Move controller inside
+
+    const fetchMoviesDebounced = debounce(async () => {
+      if (!query.trim()) {
+        setMovies([]);
+        setError("");
+        return;
+      }
+      if (query.length < 3) {
+        setMovies([]);
+        setError("");
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError("");
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query.trim()}`,
+          { signal: controller.signal }
+        );
+        if (!res.ok) throw new Error("Something went wrong with fetching");
+
+        const data = await res.json();
+        if (data.Response === "False") throw new Error("Movie not found");
+
+        setMovies(data.Search);
+      } catch (err) {
+        console.error(err.message);
+        setMovies([]);
+        if (err.name === "AbortError") {
+          // Handle abort error silently
+          return;
+        }
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500);
+
+    handleCloseMovie();
+    fetchMoviesDebounced();
+
+    // Combined cleanup function
+    return () => {
+      fetchMoviesDebounced.cancel();
+      controller.abort();
+    };
+  }, [query]); // Ensure this effect runs once on mount
+  //this [] parameter means you fetch data on first render
+  //sp this fetches data on mount
+  //the second argument is the dependency array, look at different effects
+
+  //then handles asynchronous operations once it is resolved
+  //then commonly used with api calling, file reading, db queries
+
+  return (
+    <>
+      <NavBar>
+        <Logo />
+        <Search query={query} setQuery={setQuery} />
+        <NumResults movies={movies} />
+      </NavBar>
+
+      <Main>
+        <BoxImage>
+          <div
+            className="box-with-bg"
+            style={{
+              backgroundImage: selectedPoster
+                ? `url(${selectedPoster})`
+                : "url('/images/goku.jpg')",
+            }}
+          />
+        </BoxImage>
+
+        <Box>
+          {isLoading ? (
+            <Loader />
+          ) : error ? (
+            <ErrorMessage message={error} /> // display error if there is one
+          ) : (
+            <MovieList movies={movies} onSelectMovie={handleSelectMovie} />
+          )}
+        </Box>
+
+        <Box>
+          {selectedId ? (
+            <MovieDetails
+              selectedId={selectedId}
+              onCloseMovie={handleCloseMovie}
+              onAddWatched={handleAddWatched}
+              watched={watched}
+              onPosterSelect={setSelectedPoster} // Add this new prop
+            />
+          ) : (
+            <>
+              <WatchedSummary watched={watched} />
+              <WatchedMovieList
+                watched={watched}
+                onDeleteWatched={handleDeleteWatched}
+                onSelectMovie={handleSelectMovie}
+              />
+            </>
+          )}
+        </Box>
+
+        <BoxImage>
+          <div
+            className="box-with-bg"
+            style={{
+              backgroundImage: selectedPoster
+                ? `url(${selectedPoster})`
+                : "url('/images/goku.jpg')",
+            }}
+          />
+        </BoxImage>
+      </Main>
+    </>
+  );
+}

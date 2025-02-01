@@ -1,0 +1,74 @@
+LIFECYCLE OF COMPONENTS
+- this actually refers to a component instance
+- component lifestyle refers to diff phases a component instance goes through
+
+>first phase
+- this is the mount/initial render
+-the props and state are born,
+
+>second phase
+- when state updated, app is re-rendered or parent/props re render or
+context changes
+
+>3rd phase
+- this is where component instance is destroyed (unmounted)
+-component dies, state and props are destroyed
+
+mount --> re-render --> unmount
+
+##useEffect
+- this is used for side effects, prevents re-rendering always
+- has syntax useEffect(function() {
+
+    stuff;
+}, parameter)
+- this registers an effect (side effect), register means 
+have the component run after it is painted onto screen
+- effect is executed after render
+the empty array [] parameter says effect used on first mount.
+
+-  side effect is any interaction between compnent and world
+outside component
+- Side effects make useful things happen
+- should not be inside render logic
+- side effects can be inside event handlers (triggered by events) 
+or useEffect 
+- even handlers are triggered by things like onClick, onSubmit etc 
+- useEffect allows code to run on Mount, re-render or unmount (2nd parameter)
+- most common is used in api calls
+
+- You could in theory call fetch api onClick, however
+if youd want it to run on first render, use useEffect
+- dependency array can do more effects other than initial render
+each effect can also return a clean up function, which is a function 
+called before component renders or unmounts
+- note, event handlers are always preferred way for doing side effects
+
+##dependency array
+- By default effectss run agter each render
+- every time a dependency canges, the effect executes again
+- every state variable and prop used inside the effect must be 
+included in the dependency array.
+- useEffects are reactive i.e. whenever a dependency changes it executes again
+-useEffect is a synchronization mechanism 
+
+i.e.- useEffect(fn, [x, y,z]) i.e. use effect each time
+useState or prop changes
+the effect will execute each time x,y or z changes
+- useEffect(fn, []) runs on mount
+- useEffect(fn) runs on every render
+
+| Mount (initial render)
+| commit
+|browser paint
+|*Effect, if an effect sets state an additonal render happens
+|title changes
+|re-render
+|commit
+|layout effect
+|browser paint
+| *Effect
+|onMount
+
+note, the effect only occurs once the brower paints
+the above shows the sequence in which things happen

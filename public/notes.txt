@@ -1,0 +1,50 @@
+##COMPONENT DECISION
+
+how do you partition a page into components?
+- each component should have a single well defined reponsibility
+ however they should not be too specific such that you have too many mini components
+- each component should strive to be reusable
+- there should be logical separation of the content and/or layout
+- create components best for your coding style
+
+Framework:
+- start with larger components and split into smaller when necessary
+- if you want to reuse a part of some component, that part should probably be
+a new component
+- if you have too many props or pieces of state, probably need new components
+
+More Guidelines:
+- creating new component creates new abstraction
+- abstractions require more mental energy to swithc back and forward between
+components
+- never declare a component inside another component
+- most apps have a few huge components
+- the smaller components are, the more reusable they are
+
+##COMPONENTS
+
+components naturally fall into 3 categories
+> stateless/presentational
+-these receive props and present received data
+-highly reusable
+>stateful
+-have state and can be reusable
+>structural
+-page layouts or screens of apps
+-result of composition
+-usually huge but not always, provide structure to application
+
+component composition
+
+> so far we have been using components inside component.
+> this provides a reusability issue
+> to solve this, we make use of component composition
+> We pass in children prop, this makes it reusable, use children prop as
+ much as possible
+> formally, component composition is combining different components 
+using the children prop. This fixes the prop drilling issue.
+
+Props as an API
+> think of component having a creator and consumer
+> try not to expose too much logic to the consumer
+> think of props as API call
